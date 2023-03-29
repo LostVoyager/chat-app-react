@@ -12,9 +12,9 @@ export default function Chat() {
       <div className="chatInfo">
         <span>Jane Doe</span>
         <div className="chatIcons">
-          <img src={Cam} alt="" srcset="" />
-          <img src={Add} alt="" srcset="" />
-          <img src={More} alt="" srcset="" />
+          <img src={Cam} alt="" srcSet="" />
+          <img src={Add} alt="" srcSet="" />
+          <img src={More} alt="" srcSet="" />
         </div>
       </div>
       <Messages/>
