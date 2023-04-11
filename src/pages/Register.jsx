@@ -7,10 +7,12 @@ import { doc, setDoc } from "firebase/firestore";
 import { Link, useNavigate } from "react-router-dom";
 
 export default function Register() {
+  const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
+    setLoading(true);
     e.preventDefault();
     const displayName = e.target[0].value;
     const email = e.target[1].value;
@@ -20,22 +22,11 @@ export default function Register() {
     try {
       const res = await createUserWithEmailAndPassword(auth, email, password);
 
-      const storageRef = ref(storage, res.user.uid);
+      const storageRef = ref(storage, `${displayName + new Date().getTime()}`);
 
-      const uploadTask = uploadBytesResumable(storageRef, file);
-
-      // Register three observers:
-      // 1. 'state_changed' observer, called any time the state changes
-      // 2. Error observer, called on failure
-      // 3. Completion observer, called on successful completion
-      uploadTask.on(
-        (error) => {
-          setErr(true);
-          console.log(err);
-          alert(err);
-        },
-        () => {
-          getDownloadURL(uploadTask.snapshot.ref).then(async (downloadURL) => {
+      await uploadBytesResumable(storageRef, file).then(() => {
+        getDownloadURL(storageRef).then(async (downloadURL) => {
+          try {
             await updateProfile(res.user, {
               displayName: displayName,
               photoURL: downloadURL,
@@ -48,13 +39,15 @@ export default function Register() {
             });
             await setDoc(doc(db, "userChats", res.user.uid), {});
             navigate("/");
-          });
-        }
-      );
+          } catch {
+            setErr(true);
+            setLoading(false);
+          }
+        });
+      });
     } catch (err) {
       setErr(true);
-      console.log(err);
-      alert(err);
+      setLoading(false);
     }
   };
 
@@ -64,15 +57,34 @@ export default function Register() {
         <span className="logo">Chat App</span>
         <span className="title">Register</span>
         <form onSubmit={handleSubmit}>
-          <input type="text" name="" id="" placeholder="display name" />
-          <input type="email" name="" id="" placeholder="email" />
-          <input type="password" name="" id="" placeholder="password" />
-          <input type="file" style={{ display: "none" }} name="" id="file" />
+          <input
+            required
+            type="text"
+            name=""
+            id=""
+            placeholder="display name"
+          />
+          <input required type="email" name="" id="" placeholder="email" />
+          <input
+            required
+            type="password"
+            name=""
+            id=""
+            placeholder="password"
+          />
+          <input
+            required
+            type="file"
+            style={{ display: "none" }}
+            name=""
+            id="file"
+          />
           <label htmlFor="file">
             <img src={Add} alt="" srcSet="" />
             <span>Add an avatar</span>
           </label>
-          <button>Sign Up</button>
+          <button disabled={loading}>Sign Up</button>
+          {loading && <span>Signing up...</span>}
           {err && <span>Something went wrong. Please try again later.</span>}
         </form>
         <p>
